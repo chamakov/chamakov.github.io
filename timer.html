@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporizador de Ronda (Fredy Party Style)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&display=swap');
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0d0d0d;
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            color: #e0e0e0;
+        }
+
+        /* Contenedor principal para el timer */
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 2rem 4rem;
+            background: linear-gradient(135deg, #1f1f1f, #0d0d0d);
+            /* Centra el reloj */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Logo (opcional, puedes quitarlo si prefieres el reloj más grande) */
+        #header-logo {
+            flex-shrink: 0;
+            margin-bottom: 2rem;
+            /* Posición absoluta para que no mueva el reloj */
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #header-logo img {
+            max-height: 120px;
+            width: auto;
+            filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.7));
+        }
+
+        /* El reloj (MM:SS) */
+        #timer-display {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 25rem; /* ¡Gigante! */
+            font-weight: 700;
+            color: #f6ab13; /* Rosa */
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.7), 0 0 10px rgba(255, 255, 255, 0.5);
+            line-height: 1;
+        }
+
+        /* Mensaje de ¡TIEMPO! (inicialmente oculto) */
+        #message-display {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 8rem;
+            font-weight: 700;
+            color: #ffd400; /* Amarillo */
+            text-shadow: 0 0 20px rgba(255, 212, 0, 0.7), 0 0 10px rgba(255, 212, 0, 0.5);
+            margin-top: 2rem;
+            display: none; /* Oculto por defecto */
+            animation: pulse 1s infinite; /* Animación de pulso */
+        }
+
+        /* Pantalla de configuración (superpuesta) */
+        #config-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: rgba(13, 13, 13, 0.95); /* Fondo oscuro semi-transparente */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #config-screen h2 {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #f6ab13;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        #config-screen input {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 4rem;
+            width: 200px;
+            text-align: center;
+            background: #1f1f1f;
+            color: #fff;
+            border: 2px solid #ffd400;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 212, 0, 0.5);
+            outline: none;
+        }
+        
+        #config-screen button {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0d0d0d;
+            background: #ffd400;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 3rem;
+            margin-top: 2.5rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 212, 0, 0.7);
+            transition: all 0.2s ease;
+        }
+
+        #config-screen button:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Animación de pulso para el mensaje ¡TIEMPO! */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive para el reloj */
+        @media (max-width: 768px) {
+            #timer-display {
+                font-size: 10rem;
+            }
+            #message-display {
+                font-size: 4rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <audio id="alarm-sound" src="timer-alarm.mp3" preload="auto"></audio>
+
+    <div id="config-screen">
+        <h2>Configurar Ronda</h2>
+        <input type="number" id="minutes-input" value="50" min="1" />
+        <button id="start-button">Iniciar</button>
+    </div>
+
+    <div id="display-container">
+        <div id="header-logo">
+            <img src="fredyparty-logo.png" alt="Fredy Party Logo">
+        </div>
+
+        <div id="timer-display">00:00</div>
+        <div id="message-display">¡TIEMPO!</div>
+    </div>
+
+    <script>
+        // --- Elementos del DOM ---
+        const configScreen = document.getElementById('config-screen');
+        const startButton = document.getElementById('start-button');
+        const minutesInput = document.getElementById('minutes-input');
+        
+        const timerEl = document.getElementById('timer-display');
+        const messageEl = document.getElementById('message-display');
+        const alarmSound = document.getElementById('alarm-sound');
+
+        // --- Variables de estado ---
+        let timerInterval;
+        let totalSeconds;
+
+        /**
+         * Función principal que actualiza el reloj cada segundo
+         */
+        function updateTimer() {
+            // Calcular minutos y segundos
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            // Formatear a dos dígitos (ej. "05" en lugar de "5")
+            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            // --- ¡Se acabó el tiempo! ---
+            if (totalSeconds <= 0) {
+                clearInterval(timerInterval);
+                timerEl.textContent = "00:00";
+                
+                // Mostrar mensaje y sonar alarma
+                messageEl.style.display = 'block';
+                alarmSound.play();
+
+                // Cambiar el color del reloj a amarillo como alerta extra
+                timerEl.style.color = '#ffd400';
+                timerEl.style.textShadow = '0 0 20px rgba(255, 212, 0, 0.7), 0 0 10px rgba(255, 212, 0, 0.5)';
+            }
+
+            // Reducir el tiempo
+            totalSeconds--;
+        }
+
+        /**
+         * Inicia la cuenta regresiva
+         */
+        function startTimer() {
+            const minutes = parseInt(minutesInput.value, 10);
+
+            if (isNaN(minutes) || minutes <= 0) {
+                alert("Por favor, ingresa un número de minutos válido.");
+                return;
+            }
+
+            totalSeconds = minutes * 60;
+
+            // Ocultar la pantalla de configuración
+            configScreen.style.display = 'none';
+
+            // Iniciar el reloj
+            updateTimer(); // Llamada inmediata para mostrar el tiempo inicial
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startTimer);
+        
+        // Opcional: Iniciar con la tecla "Enter" en el input
+        minutesInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                startTimer();
+            }
+        });
+
+    </script>
+</body>
+</html>

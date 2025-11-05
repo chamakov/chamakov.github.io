@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roster de Jugadores</title>
+    <style>
+        /* Fuentes de Google Fonts (opcionales, busca alternativas si no te gustan) */
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=Press+Start+2P&display=swap');
+
+        /* Reseteo básico para ocupar toda la pantalla */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evita barras de scroll */
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif; /* Fuente más moderna y técnica */
+            background-color: #0d0d0d; /* Fondo más oscuro */
+            color: #e0e0e0;
+        }
+
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 2rem 4rem; /* Más padding horizontal para centrar mejor el contenido visualmente */
+            background: linear-gradient(135deg, #1f1f1f, #0d0d0d); /* Degradado sutil */
+            position: relative; /* Para posibles elementos superpuestos */
+        }
+
+        #header-logo {
+            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #header-logo img {
+            max-height: 120px; /* Ajusta el tamaño del logo */
+            width: auto;
+            filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.7)); /* Sombra de neón amarilla */
+        }
+
+        #category-title {
+            font-family: 'Chakra Petch', sans-serif; /* Usamos la misma fuente */
+            font-size: 5rem; /* Más grande aún */
+            font-weight: 700; /* Más robusto */
+            color: #f6ab13; /* Rosa magenta vibrante */
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5); /* Sombra de neón */
+            margin: 0;
+            margin-bottom: 2rem; /* Más espacio abajo del título */
+            text-align: center;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease-in-out; /* Transición para el fade */
+        }
+
+        #category-title.fade-out {
+            opacity: 0;
+        }
+
+        #player-viewport {
+            flex-grow: 1;
+            overflow: hidden;
+            position: relative;
+            border-top: 3px solid #ffd400; /* Línea divisoria amarilla */
+            border-bottom: 3px solid #ffd400; /* Línea divisoria amarilla */
+            box-shadow: 0 0 20px rgba(255, 212, 0, 0.4); /* Resplandor amarillo */
+            padding-top: 1rem; /* Espacio dentro del viewport */
+            padding-bottom: 1rem;
+        }
+
+        #player-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            transition-property: transform, opacity;
+            transition-timing-function: ease-in-out;
+        }
+
+        #player-list.fade-out {
+            opacity: 0;
+        }
+
+        #player-list li {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 3.5rem;      /* Fuente más grande */
+            line-height: 5rem;      /* Altura de línea más grande */
+            height: 5rem;           /* Altura fija (debe coincidir con line-height) */
+            
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.2); /* Línea punteada sutil */
+            padding-left: 1rem; /* Pequeño indentado */
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* Ligero resplandor blanco */
+        }
+
+        #player-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Responsive: Ajustes para pantallas más pequeñas si fuera necesario */
+        @media (max-width: 768px) {
+            #display-container {
+                padding: 1rem 2rem;
+            }
+            #header-logo img {
+                max-height: 80px;
+            }
+            #category-title {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+            #player-list li {
+                font-size: 2.2rem;
+                line-height: 3.5rem;
+                height: 3.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display-container">
+        <div id="header-logo">
+            <img src="fredyparty-logo.png" alt="Fredy Party Logo">
+        </div>
+
+        <h2 id="category-title">Cargando Roster...</h2>
+        <div id="player-viewport">
+            <ul id="player-list">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const SCROLL_INTERVAL_MS = 1000; 
+        const SCROLL_SPEED_MS = 600;     
+        const RESET_FADE_TIME_MS = 500;  
+        // ---------------------
+
+        // Obtener el nombre del archivo de la URL, con un valor por defecto
+        const urlParams = new URLSearchParams(window.location.search);
+        const ROSTER_FILE_NAME = urlParams.get('file') || 'jnknnjroster.html';
+
+
+        const categoryEl = document.getElementById('category-title');
+        const viewportEl = document.getElementById('player-viewport');
+        const playerListEl = document.getElementById('player-list');
+
+        let rosterData = {};
+        let categoryKeys = [];
+        let currentCategoryIndex = 0;
+        let currentPlayerIndex = 0;
+        let liHeight = 0;
+        let playersVisible = 0; 
+
+        /**
+         * Parsea el roster (sin cambios funcionales)
+         */
+        async function parseRoster() {
+            try {
+                const response = await fetch(ROSTER_FILE_NAME);
+                if (!response.ok) throw new Error(`Error al cargar el archivo: ${response.statusText}`);
+                const htmlText = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const parsedRoster = {};
+                const categoryHeadings = doc.querySelectorAll('h3');
+
+                categoryHeadings.forEach(h3 => {
+                    const h3Text = h3.textContent || '';
+                    if (h3Text.includes('Categoría')) {
+                        const categoryName = h3Text.split('--')[0].trim();
+                        const players = [];
+                        let nextEl = h3.nextElementSibling;
+                        while (nextEl) {
+                            if (nextEl.classList.contains('players_table')) break;
+                            nextEl = nextEl.nextElementSibling;
+                        }
+                        if (nextEl) {
+                            const rows = nextEl.querySelectorAll('tbody tr');
+                            rows.forEach(row => {
+                                const nameCell = row.querySelector('td:nth-child(2)');
+                                if (nameCell) players.push(nameCell.textContent.trim());
+                            });
+                        }
+                        if (players.length > 0) parsedRoster[categoryName] = players;
+                    }
+                });
+                return parsedRoster;
+            } catch (error) {
+                console.error("Error en parseRoster:", error);
+                categoryEl.textContent = 'Error';
+                playerListEl.innerHTML = '<li>No se pudo cargar el archivo del roster.</li>';
+                return null;
+            }
+        }
+
+        /**
+         * Carga la lista de jugadores para una categoría específica (sin cambios funcionales)
+         */
+        function buildCategoryList(categoryIndex) {
+            const categoryName = categoryKeys[categoryIndex];
+            const players = rosterData[categoryName];
+            
+            let html = '';
+            players.forEach(name => {
+                html += `<li>${name}</li>`;
+            });
+            playerListEl.innerHTML = html;
+
+            playerListEl.style.transitionProperty = 'none'; 
+            playerListEl.style.transform = 'translateY(0)';
+            void playerListEl.offsetWidth; 
+            playerListEl.style.transitionProperty = 'transform, opacity'; 
+
+            categoryEl.textContent = categoryName;
+        }
+
+        /**
+         * Lógica principal del "ticker"
+         */
+        function updateScroll() {
+            const playersInThisCategory = rosterData[categoryKeys[currentCategoryIndex]];
+            const lastValidIndex = Math.max(0, playersInThisCategory.length - playersVisible);
+
+            if (currentPlayerIndex > lastValidIndex) {
+                // --- CAMBIO DE CATEGORÍA ---
+                
+                // Aplicar fade-out al título y la lista
+                categoryEl.classList.add('fade-out');
+                playerListEl.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    currentCategoryIndex = (currentCategoryIndex + 1) % categoryKeys.length;
+                    buildCategoryList(currentCategoryIndex);
+                    currentPlayerIndex = 0;
+
+                    // Remover fade-out para que aparezcan
+                    categoryEl.classList.remove('fade-out');
+                    playerListEl.classList.remove('fade-out');
+                }, RESET_FADE_TIME_MS);
+
+                return;
+            }
+
+            // --- DESLIZAMIENTO NORMAL ---
+            const scrollAmount = currentPlayerIndex * liHeight;
+            playerListEl.style.transform = `translateY(-${scrollAmount}px)`;
+            currentPlayerIndex++;
+        }
+
+        /**
+         * Función principal de inicialización
+         */
+        async function main() {
+            rosterData = await parseRoster();
+            if (!rosterData) return;
+
+            categoryKeys = Object.keys(rosterData);
+            if (categoryKeys.length === 0) {
+                categoryEl.textContent = 'Roster Vacío';
+                return;
+            }
+
+            playerListEl.style.transitionDuration = `${SCROLL_SPEED_MS}ms, ${RESET_FADE_TIME_MS}ms`;
+            buildCategoryList(0);
+            
+            const firstLi = playerListEl.querySelector('li');
+            if (!firstLi) {
+                console.error("No se pudieron crear los <li>");
+                return;
+            }
+            liHeight = firstLi.offsetHeight;
+
+            // Mide la altura del viewport y calcula cuántos jugadores caben
+            const viewportHeight = viewportEl.offsetHeight;
+            playersVisible = Math.max(1, Math.floor(viewportHeight / liHeight));
+            
+            currentCategoryIndex = 0;
+            currentPlayerIndex = 0; 
+            
+            setInterval(updateScroll, SCROLL_INTERVAL_MS);
+            updateScroll(); 
+        }
+
+        document.addEventListener('DOMContentLoaded', main);
+    </script>
+</body>
+</html>

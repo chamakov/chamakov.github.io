@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emparejamientos del Torneo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&display=swap');
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+        }
+
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 2rem 4rem;
+            background: linear-gradient(135deg, #1f1f1f, #0d0d0d);
+        }
+
+        #header-logo {
+            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #header-logo img {
+            max-height: 120px;
+            width: auto;
+            filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.7));
+        }
+
+        #round-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 5rem;
+            font-weight: 700;
+            color: #f6ab13;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5);
+            margin: 0;
+            margin-bottom: 2rem;
+            text-align: center;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #round-title.fade-out {
+            opacity: 0;
+        }
+
+        #player-viewport {
+            flex-grow: 1;
+            overflow: hidden;
+            position: relative;
+            border-top: 3px solid #ffd400;
+            border-bottom: 3px solid #ffd400;
+            box-shadow: 0 0 20px rgba(255, 212, 0, 0.4);
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        #player-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            transition-property: transform, opacity;
+            transition-timing-function: ease-in-out;
+        }
+
+        #player-list.fade-out {
+            opacity: 0;
+        }
+
+        #player-list li {
+            font-size: 3.5rem;
+            line-height: 5rem;
+            height: 5rem;
+            color: #ffffff;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+        }
+
+        #player-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .table-num {
+            font-weight: 700;
+            color: #ffd400; /* Amarillo */
+            font-size: 4rem;
+            flex-shrink: 0;
+            width: 120px;
+            text-align: center;
+        }
+
+        .player-name {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 1.5rem;
+        }
+
+        .player-name.player-1 {
+            text-align: right;
+        }
+        .player-name.player-2 {
+            text-align: left;
+        }
+
+        .vs-span {
+            color: #f6ab13;
+            font-weight: 700;
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            /* ... (estilos responsivos sin cambios) ... */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display-container">
+        
+        <div id="header-logo">
+            <img src="fredyparty-logo.png" alt="Fredy Party Logo">
+        </div>
+
+        <h2 id="round-title">Cargando Emparejamientos...</h2>
+        
+        <div id="player-viewport">
+            <ul id="player-list">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const SCROLL_INTERVAL_MS = 1000; 
+        const SCROLL_SPEED_MS = 600;     
+        const RESET_FADE_TIME_MS = 500;  
+        // ---------------------
+
+        // Obtener el nombre del archivo de la URL, con un valor por defecto
+        const urlParams = new URLSearchParams(window.location.search);
+        const PAIRINGS_FILE_NAME = urlParams.get('file') || 'jnknnjpairings.html';
+
+
+        const roundEl = document.getElementById('round-title');
+        const viewportEl = document.getElementById('player-viewport');
+        const playerListEl = document.getElementById('player-list');
+
+        let roundTitleBase = ""; 
+        let pairingsData = {};   
+        let categoryKeys = [];   
+        
+        let currentCategoryIndex = 0;
+        let currentPairingIndex = 0; 
+        let liHeight = 0;
+        let playersVisible = 0;
+
+        /**
+         * Acorta un nombre completo (sin cambios)
+         */
+        function shortenName(fullName) {
+            const parts = fullName.trim().split(/\s+/);
+            if (parts.length <= 2) return fullName;
+            if (parts.length === 3) return `${parts[0]} ${parts[1]}`;
+            if (parts.length === 4) return `${parts[0]} ${parts[2]}`;
+            return `${parts[0]} ${parts[parts.length - 2]}`;
+        }
+
+        /**
+         * Parsea el archivo para múltiples categorías (sin cambios)
+         */
+        async function parsePairings() {
+            try {
+                const response = await fetch(PAIRINGS_FILE_NAME);
+                if (!response.ok) throw new Error(`Error al cargar el archivo: ${response.statusText}`);
+                const htmlText = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                const mainTitleEl = doc.querySelector('h3');
+                const originalTitle = mainTitleEl ? mainTitleEl.textContent.trim() : "Pairings";
+                const parts = originalTitle.split(' ');
+                const roundNumber = parts[parts.length - 1];
+                const baseTitle = `Ronda ${roundNumber}`;
+
+                const categoryData = {};
+                const allHeadings = doc.querySelectorAll('h3');
+
+                allHeadings.forEach((h3) => {
+                    if (h3 === mainTitleEl) {
+                        return;
+                    } else if (h3.textContent.trim().toLowerCase().startsWith('pairings')) {
+                        return;
+                    }
+
+                    const categoryName = h3.textContent.trim();
+                    const pairings = [];
+                    const processedTables = new Set();
+                    
+                    let nextEl = h3.nextElementSibling;
+                    while (nextEl) {
+                        if (nextEl.tagName === 'TABLE' && nextEl.classList.contains('report')) {
+                            break; 
+                        }
+                        nextEl = nextEl.nextElementSibling;
+                    }
+
+                    if (nextEl) { 
+                        const rows = nextEl.querySelectorAll('tr');
+                        rows.forEach((row, rowIndex) => {
+                            if (rowIndex === 0) return; 
+
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length < 4) return; 
+
+                            const tableNum = parseInt(cells[0].textContent.trim(), 10);
+                            if (isNaN(tableNum) || processedTables.has(tableNum)) {
+                                return;
+                            }
+                            processedTables.add(tableNum);
+
+                            const player1 = shortenName(cells[1].textContent.trim().split('(')[0].trim());
+                            const player2 = shortenName(cells[3].textContent.trim().split('(')[0].trim());
+                            pairings.push({ table: tableNum, player1, player2 });
+                        });
+                    }
+                    
+                    if (pairings.length > 0) {
+                        // El orden por mesa se aplica aquí, dentro de cada categoría
+                        pairings.sort((a, b) => a.table - b.table);
+                        categoryData[categoryName] = pairings;
+                    }
+                });
+
+                return { roundTitleBase: baseTitle, categories: categoryData };
+
+            } catch (error) {
+                console.error("Error en parsePairings:", error);
+                roundEl.textContent = 'Error';
+                playerListEl.innerHTML = '<li>No se pudo cargar el archivo de pairings.</li>';
+                return null;
+            }
+        }
+
+        /**
+         * Construye la lista para una CATEGORÍA específica (sin cambios)
+         */
+        function buildCategoryPairings(categoryIndex) {
+            const categoryName = categoryKeys[categoryIndex];
+            const currentPairings = pairingsData[categoryName];
+            
+            let html = '';
+            currentPairings.forEach(p => {
+                html += `<li>
+                    <span class="table-num">${p.table}</span>
+                    <span class="player-name player-1">${p.player1}</span>
+                    <span class="vs-span">vs.</span>
+                    <span class="player-name player-2">${p.player2}</span>
+                </li>`;
+            });
+            playerListEl.innerHTML = html;
+
+            playerListEl.style.transitionProperty = 'none'; 
+            playerListEl.style.transform = 'translateY(0)';
+            void playerListEl.offsetWidth; 
+            playerListEl.style.transitionProperty = 'transform, opacity'; 
+
+            roundEl.textContent = `${roundTitleBase} - ${categoryName}`;
+        }
+
+        /**
+         * Lógica del "ticker" (sin cambios)
+         */
+        function updateScroll() {
+            const currentPairings = pairingsData[categoryKeys[currentCategoryIndex]];
+            const lastValidIndex = Math.max(0, currentPairings.length - playersVisible);
+
+            if (currentPairingIndex > lastValidIndex) {
+                // --- CAMBIO DE CATEGORÍA ---
+                
+                roundEl.classList.add('fade-out');
+                playerListEl.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    currentCategoryIndex = (currentCategoryIndex + 1) % categoryKeys.length;
+                    buildCategoryPairings(currentCategoryIndex);
+                    currentPairingIndex = 0;
+                    
+                    roundEl.classList.remove('fade-out');
+                    playerListEl.classList.remove('fade-out');
+
+                }, RESET_FADE_TIME_MS);
+
+                return;
+            }
+
+            // --- DESLIZAMIENTO NORMAL ---
+            const scrollAmount = currentPairingIndex * liHeight;
+            playerListEl.style.transform = `translateY(-${scrollAmount}px)`;
+            currentPairingIndex++;
+        }
+
+        /**
+         * Función principal de inicialización (ACTUALIZADA)
+         */
+        async function main() {
+            const data = await parsePairings();
+            
+            if (!data || Object.keys(data.categories).length === 0) {
+                roundEl.textContent = 'No hay emparejamientos';
+                return;
+            }
+
+            roundTitleBase = data.roundTitleBase;
+            pairingsData = data.categories;
+
+            // --- ¡NUEVO CÓDIGO DE ORDENAMIENTO! ---
+            // 1. Obtener las llaves tal como vienen
+            const originalKeys = Object.keys(pairingsData);
+
+            // 2. Crear una función de "ranking"
+            const categoryRank = (key) => {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey.includes('júnior')) return 1;
+                if (lowerKey.includes('sénior')) return 2;
+                if (lowerKey.includes('máster')) return 3;
+                if (lowerKey.includes('todas')) return 4;
+                return 99; // Otras categorías van al final
+            };
+
+            // 3. Ordenar las llaves basándose en el ranking
+            originalKeys.sort((a, b) => {
+                return categoryRank(a) - categoryRank(b);
+            });
+            
+            // 4. Asignar las llaves ya ordenadas
+            categoryKeys = originalKeys;
+            // --- FIN DEL NUEVO CÓDIGO ---
+
+            playerListEl.style.transitionDuration = `${SCROLL_SPEED_MS}ms, ${RESET_FADE_TIME_MS}ms`;
+            
+            buildCategoryPairings(0);
+            
+            const firstLi = playerListEl.querySelector('li');
+            if (!firstLi) return;
+            liHeight = firstLi.offsetHeight;
+
+            const viewportHeight = viewportEl.offsetHeight;
+            playersVisible = Math.max(1, Math.floor(viewportHeight / liHeight));
+            
+            currentCategoryIndex = 0;
+            currentPairingIndex = 0; 
+            
+            setInterval(updateScroll, SCROLL_INTERVAL_MS);
+            updateScroll();
+        }
+
+        document.addEventListener('DOMContentLoaded', main);
+    </script>
+</body>
+</html>
