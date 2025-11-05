@@ -55,6 +55,36 @@
             transition: opacity 0.3s ease-in-out;
         }
 
+        /* Estilos para los nuevos controles de búsqueda y filtro */
+        #controls {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #controls select,
+        #controls input[type="text"] {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 1.5rem;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            border: 2px solid #ffd400;
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 212, 0, 0.2);
+            flex-grow: 1;
+            min-width: 200px;
+        }
+
+        #controls select:focus,
+        #controls input[type="text"]:focus {
+            border-color: #f6ab13;
+        }
         #round-title.fade-out {
             opacity: 0;
         }
@@ -62,10 +92,10 @@
         #player-viewport {
             flex-grow: 1;
             overflow: hidden;
+            overflow-y: auto; /* Permitir scroll vertical */
             position: relative;
             border-top: 3px solid #ffd400;
             border-bottom: 3px solid #ffd400;
-            box-shadow: 0 0 20px rgba(255, 212, 0, 0.4);
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
@@ -74,14 +104,12 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            transition-property: transform, opacity;
-            transition-timing-function: ease-in-out;
         }
 
         #player-list.fade-out {
             opacity: 0;
         }
-
+        
         #player-list li {
             font-size: 3.5rem;
             line-height: 5rem;
@@ -141,6 +169,11 @@
             <img src="fredyparty-logo.png" alt="Fredy Party Logo">
         </div>
 
+        <div id="controls">
+            <select id="category-filter"></select>
+            <input type="text" id="search-input" placeholder="Buscar mesa o jugador...">
+        </div>
+
         <h2 id="round-title">Cargando Emparejamientos...</h2>
         
         <div id="player-viewport">
@@ -150,20 +183,17 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
-        const SCROLL_INTERVAL_MS = 1000; 
-        const SCROLL_SPEED_MS = 600;     
-        const RESET_FADE_TIME_MS = 500;  
-        // ---------------------
-
         // Obtener el nombre del archivo de la URL, con un valor por defecto
         const urlParams = new URLSearchParams(window.location.search);
-        const PAIRINGS_FILE_NAME = urlParams.get('file') || 'jnknnjpairings.html';
-
+        const PAIRINGS_FILE_NAME = urlParams.get('file') || 'pairings-latest.html';
 
         const roundEl = document.getElementById('round-title');
         const viewportEl = document.getElementById('player-viewport');
         const playerListEl = document.getElementById('player-list');
+        const categoryFilterEl = document.getElementById('category-filter');
+        const searchInputEl = document.getElementById('search-input');
+
+        let allPairingsData = {}; // Para almacenar todos los emparejamientos por categoría
 
         let roundTitleBase = ""; 
         let pairingsData = {};   
@@ -265,59 +295,75 @@
         /**
          * Construye la lista para una CATEGORÍA específica (sin cambios)
          */
-        function buildCategoryPairings(categoryIndex) {
-            const categoryName = categoryKeys[categoryIndex];
-            const currentPairings = pairingsData[categoryName];
+        function buildCategoryPairings(categoryName) {
+            const currentPairings = allPairingsData[categoryName];
             
             let html = '';
             currentPairings.forEach(p => {
                 html += `<li>
                     <span class="table-num">${p.table}</span>
                     <span class="player-name player-1">${p.player1}</span>
-                    <span class="vs-span">vs.</span>
+                    <span class="vs-span">vs</span>
                     <span class="player-name player-2">${p.player2}</span>
                 </li>`;
             });
             playerListEl.innerHTML = html;
 
-            playerListEl.style.transitionProperty = 'none'; 
-            playerListEl.style.transform = 'translateY(0)';
-            void playerListEl.offsetWidth; 
-            playerListEl.style.transitionProperty = 'transform, opacity'; 
-
             roundEl.textContent = `${roundTitleBase} - ${categoryName}`;
+            applyFilters(); // Aplicar filtros después de construir la lista
         }
 
         /**
-         * Lógica del "ticker" (sin cambios)
+         * Aplica los filtros de búsqueda y categoría a la lista de emparejamientos.
          */
-        function updateScroll() {
-            const currentPairings = pairingsData[categoryKeys[currentCategoryIndex]];
-            const lastValidIndex = Math.max(0, currentPairings.length - playersVisible);
+        function applyFilters() {
+            const searchTerm = searchInputEl.value.toLowerCase();
+            const selectedCategory = categoryFilterEl.value;
 
-            if (currentPairingIndex > lastValidIndex) {
-                // --- CAMBIO DE CATEGORÍA ---
-                
-                roundEl.classList.add('fade-out');
-                playerListEl.classList.add('fade-out');
-                
-                setTimeout(() => {
-                    currentCategoryIndex = (currentCategoryIndex + 1) % categoryKeys.length;
-                    buildCategoryPairings(currentCategoryIndex);
-                    currentPairingIndex = 0;
-                    
-                    roundEl.classList.remove('fade-out');
-                    playerListEl.classList.remove('fade-out');
+            // Si la categoría seleccionada es "Todas las categorías", mostramos todos los emparejamientos
+            // De lo contrario, solo los de la categoría seleccionada
+            if (selectedCategory === "all") {
+                let allHtml = '';
+                // Definimos las categorías principales que queremos mostrar en la vista "Todas"
+                const mainCategories = ['júnior', 'sénior', 'máster'];
 
-                }, RESET_FADE_TIME_MS);
+                // Filtramos las llaves de categorías para incluir solo las principales
+                const filteredCategoryKeys = categoryKeys.filter(key => 
+                    mainCategories.some(mainCat => key.toLowerCase().includes(mainCat))
+                );
 
-                return;
+                filteredCategoryKeys.forEach(catName => {
+                    allPairingsData[catName].forEach(p => {
+                        allHtml += `<li>
+                            <span class="table-num">${p.table}</span>
+                            <span class="player-name player-1">${p.player1}</span>
+                            <span class="vs-span">vs</span>
+                            <span class="player-name player-2">${p.player2}</span>
+                        </li>`;
+                    });
+                });
+                playerListEl.innerHTML = allHtml;
+                roundEl.textContent = `${roundTitleBase} - Todas las Categorías`;
+            } else {
+                buildCategoryPairings(selectedCategory);
             }
 
-            // --- DESLIZAMIENTO NORMAL ---
-            const scrollAmount = currentPairingIndex * liHeight;
-            playerListEl.style.transform = `translateY(-${scrollAmount}px)`;
-            currentPairingIndex++;
+            const pairings = playerListEl.querySelectorAll('li');
+            pairings.forEach(pairingLi => {
+                const tableNum = pairingLi.querySelector('.table-num').textContent.toLowerCase();
+                const player1Name = pairingLi.querySelector('.player-name.player-1').textContent.toLowerCase();
+                const player2Name = pairingLi.querySelector('.player-name.player-2').textContent.toLowerCase();
+
+                if (tableNum.includes(searchTerm) || 
+                    player1Name.includes(searchTerm) || 
+                    player2Name.includes(searchTerm)) {
+                    pairingLi.style.display = '';
+                } else {
+                    pairingLi.style.display = 'none';
+                }
+            });
+            // Asegurarse de que el viewport se desplace al inicio al aplicar un nuevo filtro
+            viewportEl.scrollTop = 0;
         }
 
         /**
@@ -325,12 +371,12 @@
          */
         async function main() {
             const data = await parsePairings();
-            
+
             if (!data || Object.keys(data.categories).length === 0) {
                 roundEl.textContent = 'No hay emparejamientos';
                 return;
             }
-
+            
             roundTitleBase = data.roundTitleBase;
             pairingsData = data.categories;
 
@@ -353,26 +399,21 @@
                 return categoryRank(a) - categoryRank(b);
             });
             
-            // 4. Asignar las llaves ya ordenadas
+            // 4. Asignar las llaves ya ordenadas y guardar en allPairingsData
             categoryKeys = originalKeys;
+            allPairingsData = pairingsData; // Guardar los datos originales
             // --- FIN DEL NUEVO CÓDIGO ---
 
-            playerListEl.style.transitionDuration = `${SCROLL_SPEED_MS}ms, ${RESET_FADE_TIME_MS}ms`;
-            
-            buildCategoryPairings(0);
-            
-            const firstLi = playerListEl.querySelector('li');
-            if (!firstLi) return;
-            liHeight = firstLi.offsetHeight;
+            // Poblar el selector de categorías
+            let categoryOptionsHtml = '<option value="all">Todas las Categorías</option>';
+            categoryKeys.forEach(key => {
+                categoryOptionsHtml += `<option value="${key}">${key}</option>`;
+            });
+            categoryFilterEl.innerHTML = categoryOptionsHtml;
 
-            const viewportHeight = viewportEl.offsetHeight;
-            playersVisible = Math.max(1, Math.floor(viewportHeight / liHeight));
-            
-            currentCategoryIndex = 0;
-            currentPairingIndex = 0; 
-            
-            setInterval(updateScroll, SCROLL_INTERVAL_MS);
-            updateScroll();
+            buildCategoryPairings(categoryKeys[0]); // Cargar la primera categoría inicialmente
+            categoryFilterEl.addEventListener('change', () => applyFilters());
+            searchInputEl.addEventListener('keyup', () => applyFilters());
         }
 
         document.addEventListener('DOMContentLoaded', main);

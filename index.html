@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control</title>
+    <title>Panel de Control Jugadores - Torneo Nacional</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&display=swap');
 
@@ -62,14 +62,15 @@
             border: 2px solid #ffd400;
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 0 20px rgba(255, 212, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 212, 0, 0.2);
             display: flex;
-            align-items: center; /* <-- Añade esta línea para centrar el contenido */
+            align-items: center;
             flex-direction: column;
+            justify-content: space-between; /* Centra el contenido verticalmente */
         }
 
         .control-card h2 {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin: 0 0 1.5rem 0;
             color: #ffffff;
             border-bottom: 1px solid #ffd400;
@@ -82,19 +83,6 @@
             color: #e0e0e0;
         }
 
-        .control-card input {
-            font-family: 'Chakra Petch', sans-serif;
-            font-size: 1.5rem;
-            background: #0d0d0d;
-            color: #fff;
-            border: 1px solid #f6ab13;
-            border-radius: 4px;
-            padding: 0.5rem;
-            margin-bottom: 1.5rem;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
         .control-card button {
             font-family: 'Chakra Petch', sans-serif;
             font-size: 1.8rem;
@@ -105,7 +93,7 @@
             border-radius: 8px;
             padding: 0.8rem 1.5rem;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 212, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 212, 0, 0.4);
             transition: all 0.2s ease;
             margin-top: auto; /* Pushes button to the bottom */
         }
@@ -122,43 +110,28 @@
         <div id="header-logo">
             <img src="fredyparty-logo.png" alt="Fredy Party Logo">
         </div>
-        <h1>Panel de Control</h1>
+        <h1>Panel de Control Jugadores - Torneo Nacional 2025</h1>
 
         <div class="control-grid">
             <div class="control-card">
                 <h2>Roster de Jugadores</h2>
-                <label for="roster-file">Archivo del Roster:</label>
-                <input type="text" id="roster-file" value="jnknnjroster.html">
-                <button id="launch-roster">Lanzar Display</button>
+                <button id="launch-roster">Mostrar Roster</button>
             </div>
 
             <div class="control-card">
                 <h2>Emparejamientos</h2>
-                <label for="pairings-file">Archivo de Emparejamientos:</label>
-                <input type="text" id="pairings-file" value="jnknnjpairings.html">
-                <button id="launch-pairings">Lanzar Display</button>
-            </div>
-
-            <div class="control-card">
-                <h2>Temporizador</h2>
-                <button id="launch-timer">Lanzar Temporizador</button>
+                <button id="launch-pairings">Mostrar Emparejamientos</button>
             </div>
         </div>
     </div>
 
     <script>
         document.getElementById('launch-roster').addEventListener('click', () => {
-            const fileName = document.getElementById('roster-file').value;
-            window.open(`roster.html?file=${encodeURIComponent(fileName)}`, '_blank');
+            window.open(`roster.html`, '_blank');
         });
 
         document.getElementById('launch-pairings').addEventListener('click', () => {
-            const fileName = document.getElementById('pairings-file').value;
-            window.open(`pairings.html?file=${encodeURIComponent(fileName)}`, '_blank');
-        });
-
-        document.getElementById('launch-timer').addEventListener('click', () => {
-            window.open('timer.html', '_blank');
+            window.open(`pairings.html`, '_blank');
         });
     </script>
 
