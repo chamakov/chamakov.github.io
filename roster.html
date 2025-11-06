@@ -136,18 +136,22 @@
         @media (max-width: 768px) {
             #display-container {
                 padding: 1rem 2rem;
+                padding-bottom: 2rem; /* Añadir espacio abajo */
             }
             #header-logo img {
                 max-height: 80px;
             }
             #category-title {
-                font-size: 3rem;
+                font-size: 2.5rem; /* Reducido para mejor ajuste */
                 margin-bottom: 1rem;
             }
+            /* Ajustes para el texto de la lista */
             #player-list li {
-                font-size: 2.2rem;
-                line-height: 3.5rem;
-                height: 3.5rem;
+                font-size: 1.8rem; /* Reducimos un poco más la fuente */
+                white-space: normal; /* Permitir que el texto se divida en varias líneas */
+                height: auto; /* Altura automática para acomodar el texto */
+                line-height: 1.4; /* Espaciado de línea normal */
+                padding: 0.8rem 0; /* Espaciado vertical */
             }
         }
     </style>
@@ -246,7 +250,6 @@
             });
             playerListEl.innerHTML = html;
             categoryEl.textContent = categoryName;
-            applyFilters(); // Aplicar filtros después de construir la lista
         }
 
         /**

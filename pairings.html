@@ -157,7 +157,55 @@
         }
 
         @media (max-width: 768px) {
-            /* ... (estilos responsivos sin cambios) ... */
+            #display-container {
+                padding: 1rem 1.5rem;
+            }
+            #header-logo img {
+                max-height: 80px;
+            }
+            #round-title {
+                font-size: 2.5rem;
+                margin-bottom: 1.5rem;
+            }
+            #controls select,
+            #controls input[type="text"] {
+                font-size: 1.2rem;
+            }
+            #player-list li {
+                flex-wrap: nowrap; /* ¡Importante! Mantener en una sola línea */
+                height: auto; /* Altura automática */
+                padding: 0.2rem 0; /* Espacio vertical entre el texto y el separador */
+                align-items: center; /* Centrar verticalmente los elementos */
+                justify-content: space-between; /* Distribuir espacio entre los elementos */
+            }
+            .player-name {
+                font-size: 1.0rem; /* Reducimos aún más la fuente de los nombres */
+                white-space: nowrap; /* Evitar que los nombres se dividan en líneas */
+                overflow: hidden; /* Ocultar el texto que se desborde */
+                text-overflow: ellipsis; /* Mostrar puntos suspensivos si el nombre es muy largo */
+                flex-grow: 1; /* Permitir que los nombres crezcan para ocupar espacio */
+                flex-shrink: 1; /* Permitir que los nombres se encojan si es necesario */
+                padding: 0 0.1rem; /* Padding horizontal mínimo */
+           }
+            .player-name.player-1 {
+                text-align: right; /* Alinear a la derecha para el primer jugador */
+            }
+            .player-name.player-2 {
+                text-align: left; /* Alinear a la izquierda para el segundo jugador */
+            }
+            .vs-span {
+                font-size: 0.9rem; /* Reducimos el tamaño del "vs" */
+                flex-shrink: 0; /* Evitar que el "vs" se encoja */
+                padding: 0 0.2rem; /* Espacio alrededor del "vs" */
+                text-align: center;
+            }
+            .table-num {
+                font-size: 1.1rem; /* Reducimos la fuente del número de mesa */
+                width: 35px; /* Ancho fijo pequeño para el número de mesa */
+                flex-shrink: 0; /* Evitar que el número de mesa se encoja */
+                text-align: center;
+                padding-right: 0.1rem; /* Pequeño espacio a la derecha */
+            }
         }
     </style>
 </head>
@@ -310,7 +358,6 @@
             playerListEl.innerHTML = html;
 
             roundEl.textContent = `${roundTitleBase} - ${categoryName}`;
-            applyFilters(); // Aplicar filtros después de construir la lista
         }
 
         /**
