@@ -51,7 +51,7 @@
 
         .control-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 3rem;
             width: 100%;
             max-width: 1200px;
@@ -66,11 +66,12 @@
             display: flex;
             align-items: center;
             flex-direction: column;
-            justify-content: space-between; /* Centra el contenido verticalmente */
+            justify-content: flex-start; /* Alinea el contenido al inicio */
+            flex-grow: 1; /* Asegura que todas las tarjetas tengan la misma altura */
         }
 
         .control-card h2 {
-            font-size: 3rem;
+            font-size: 2rem;
             margin: 0 0 1.5rem 0;
             color: #ffffff;
             border-bottom: 1px solid #ffd400;
@@ -96,7 +97,7 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(255, 212, 0, 0.4);
             transition: all 0.2s ease;
-            margin-top: auto; /* Pushes button to the bottom */
+            width: 100%; /* Hace que el botón ocupe todo el ancho de la tarjeta */
         }
 
         .control-card button:hover {
@@ -109,11 +110,17 @@
                 padding: 1rem 1.5rem;
             }
             h1 {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
                 margin-bottom: 2rem;
             }
             .control-card h2 {
                 font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .control-grid {
+                grid-template-columns: 1fr; /* Una sola columna en pantallas muy pequeñas */
             }
         }
 
@@ -130,12 +137,23 @@
         <div class="control-grid">
             <div class="control-card">
                 <h2>Roster de Jugadores</h2>
-                <button id="launch-roster">Mostrar Roster</button>
+                <div style="flex-grow: 1; display: flex; align-items: center; width: 100%;">
+                    <button id="launch-roster">Mostrar Roster</button>
+                </div>
             </div>
 
             <div class="control-card">
                 <h2>Emparejamientos</h2>
-                <button id="launch-pairings">Mostrar Emparejamientos</button>
+                <div style="flex-grow: 1; display: flex; align-items: center; width: 100%;">
+                    <button id="launch-pairings">Mostrar Emparejamientos</button>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h2>Horarios de Side Events</h2>
+                <div style="flex-grow: 1; display: flex; align-items: center; width: 100%;">
+                    <button id="launch-schedule">Mostrar Horarios</button>
+                </div>
             </div>
         </div>
     </div>
@@ -147,6 +165,10 @@
 
         document.getElementById('launch-pairings').addEventListener('click', () => {
             window.open(`pairings.html`, '_blank');
+        });
+
+        document.getElementById('launch-schedule').addEventListener('click', () => {
+            window.open(`schedule.html`, '_blank');
         });
     </script>
 

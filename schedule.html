@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios de Side Events - Torneo Nacional</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&display=swap');
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+        }
+
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 2rem 4rem;
+            background: linear-gradient(135deg, #1f1f1f, #0d0d0d);
+        }
+
+        #header-logo {
+            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        #header-logo img {
+            max-height: 100px;
+            width: auto;
+            filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.7));
+        }
+
+        #schedule-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #f6ab13;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5);
+            margin: 0 0 1rem 0;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        #image-viewport {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border-top: 3px solid #ffd400;
+            border-bottom: 3px solid #ffd400;
+            padding: 1rem;
+        }
+
+        #schedule-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(255, 212, 0, 0.3);
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .nav-button {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0d0d0d;
+            background: #ffd400;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 212, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background: #fff;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            #display-container {
+                padding: 1rem 1.5rem;
+            }
+            #header-logo img {
+                max-height: 80px;
+            }
+            #schedule-title {
+                font-size: 2rem;
+            }
+            .nav-button {
+                font-size: 1.2rem;
+                padding: 0.6rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display-container">
+        <div id="header-logo">
+            <img src="fredyparty-logo.png" alt="Fredy Party Logo">
+        </div>
+        <h1 id="schedule-title">Horarios de Side Events</h1>
+
+        <div id="image-viewport">
+            <img id="schedule-image" src="" alt="Horario del evento">
+        </div>
+
+        <div id="nav-buttons">
+            <button id="prev-button" class="nav-button">Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        // Agrega aquí los nombres de tus 4 archivos de imagen
+        const images = [
+            '1.png',
+            '2.png',
+            '3.png',
+            '4.png'
+        ];
+        const AUTO_SCROLL_INTERVAL = 15000; // 15 segundos
+
+        // --- Elementos del DOM ---
+        const imageEl = document.getElementById('schedule-image');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+
+        // --- Lógica del visor ---
+        let currentImageIndex = 0;
+        let autoScrollTimer;
+
+        function showImage(index) {
+            imageEl.style.opacity = 0;
+            setTimeout(() => {
+                imageEl.src = images[index];
+                imageEl.style.opacity = 1;
+            }, 500); // Coincide con la transición de CSS
+        }
+
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            showImage(currentImageIndex);
+            resetAutoScroll();
+        }
+
+        function prevImage() {
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            showImage(currentImageIndex);
+            resetAutoScroll();
+        }
+
+        function resetAutoScroll() {
+            clearInterval(autoScrollTimer);
+            autoScrollTimer = setInterval(nextImage, AUTO_SCROLL_INTERVAL);
+        }
+
+        // --- Inicialización ---
+        prevButton.addEventListener('click', prevImage);
+        nextButton.addEventListener('click', nextImage);
+
+        showImage(currentImageIndex);
+        resetAutoScroll();
+    </script>
+
+</body>
+</html>

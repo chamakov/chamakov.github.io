@@ -3,6 +3,7 @@
 - **Control Panel (`index.html`):** A central hub to launch the different display screens.
 - **Roster Display (`roster.html`):** An interactive display for the list of registered players. It features auto-scrolling through categories (Júnior, Sénior, Máster) and also allows for manual filtering by category and searching for specific players.
 - **Pairings Display (`pairings.html`):** An interactive display for round pairings. It auto-scrolls through categories, showing table number and player names. It also includes controls to filter by category and search for a specific player or table number.
+- **Schedule Display (`schedule.html`):** A simple image-based slideshow to display event schedules. It supports manual navigation and auto-scrolling.
 - **Timer (`timer.html`):** A full-screen countdown timer for rounds, with a configurable duration and an audible alarm.
 
 ## How to Use
