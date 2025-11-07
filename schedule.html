@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horarios de Side Events - Torneo Nacional</title>
+    <title>Horarios del Evento</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&display=swap');
 
@@ -43,7 +43,7 @@
         }
 
         #schedule-title {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 700;
             color: #f6ab13;
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5);
@@ -71,6 +71,7 @@
             border-radius: 8px;
             box-shadow: 0 0 25px rgba(255, 212, 0, 0.3);
             transition: opacity 0.5s ease-in-out;
+            cursor: zoom-in;
         }
 
         #nav-buttons {
@@ -100,6 +101,48 @@
             box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
         }
 
+        /* --- Estilos para el Modal (Lightbox) --- */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed; /* Posición fija para cubrir toda la pantalla */
+            z-index: 1000; /* Asegura que esté por encima de todo */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9); /* Fondo negro semi-transparente */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            user-select: none; /* Evita que el texto se seleccione */
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+        /* --- Fin de estilos para el Modal --- */
+
+
         @media (max-width: 768px) {
             #display-container {
                 padding: 1rem 1.5rem;
@@ -123,10 +166,16 @@
         <div id="header-logo">
             <img src="fredyparty-logo.png" alt="Fredy Party Logo">
         </div>
-        <h1 id="schedule-title">Horarios de Side Events</h1>
+        <h1 id="schedule-title">Horarios del Evento</h1>
 
         <div id="image-viewport">
             <img id="schedule-image" src="" alt="Horario del evento">
+        </div>
+
+        <!-- Modal para ampliar la imagen -->
+        <div id="image-modal" class="modal">
+            <span class="close-modal">&times;</span>
+            <img class="modal-content" id="modal-img">
         </div>
 
         <div id="nav-buttons">
@@ -148,12 +197,16 @@
 
         // --- Elementos del DOM ---
         const imageEl = document.getElementById('schedule-image');
+        const modalEl = document.getElementById('image-modal');
+        const modalImageEl = document.getElementById('modal-img');
+        const closeModalEl = document.querySelector('.close-modal');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
 
         // --- Lógica del visor ---
         let currentImageIndex = 0;
         let autoScrollTimer;
+        let isModalOpen = false;
 
         function showImage(index) {
             imageEl.style.opacity = 0;
@@ -164,25 +217,50 @@
         }
 
         function nextImage() {
+            if (isModalOpen) return;
             currentImageIndex = (currentImageIndex + 1) % images.length;
             showImage(currentImageIndex);
             resetAutoScroll();
         }
 
         function prevImage() {
+            if (isModalOpen) return;
             currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
             showImage(currentImageIndex);
             resetAutoScroll();
         }
 
         function resetAutoScroll() {
+            if (isModalOpen) return;
             clearInterval(autoScrollTimer);
             autoScrollTimer = setInterval(nextImage, AUTO_SCROLL_INTERVAL);
+        }
+
+        // --- Lógica del Modal ---
+        function openModal() {
+            isModalOpen = true;
+            clearInterval(autoScrollTimer); // Pausar el carrusel
+            modalEl.style.display = "flex";
+            modalImageEl.src = imageEl.src;
+        }
+
+        function closeModal() {
+            isModalOpen = false;
+            modalEl.style.display = "none";
+            resetAutoScroll(); // Reanudar el carrusel
         }
 
         // --- Inicialización ---
         prevButton.addEventListener('click', prevImage);
         nextButton.addEventListener('click', nextImage);
+        
+        // Eventos para el modal
+        imageEl.addEventListener('click', openModal);
+        closeModalEl.addEventListener('click', closeModal);
+        modalEl.addEventListener('click', (e) => {
+            // Cierra el modal si se hace clic en el fondo, pero no en la imagen
+            if (e.target === modalEl) closeModal();
+        });
 
         showImage(currentImageIndex);
         resetAutoScroll();
