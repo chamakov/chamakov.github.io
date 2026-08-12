@@ -1,4 +1,4 @@
-import { Briefcase, Activity, Code2, Server } from 'lucide-react';
+import { Code2, Server } from 'lucide-react';
 
 const Experience = () => {
   const experiences = [
